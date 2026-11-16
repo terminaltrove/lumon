@@ -1,0 +1,52 @@
+# The default set plus linters that catch actual bugs here, and no style
+# linters: the code's naming follows the show and its tests have prose names.
+
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard          # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - bodyclose               # the tests open connections
+    - copyloopvar             # goroutines per session in the floor benchmarks
+    - durationcheck           # the clock multiplies and divides Durations
+    - errorlint
+    - makezero
+    - nilerr
+    - prealloc                # frame-path allocation is measured and defended
+    - unconvert
+    - wastedassign
+
+  settings:
+    errcheck:
+      # Nobody can act on an error from these Closes (e.g. a healthcheck dial).
+      exclude-functions:
+        - (net.Conn).Close
+        - (io.Closer).Close
+
+    staticcheck:
+      checks:
+        - all
+        # ST1000: package doc comments, not yet a blocking check.
+        - -ST1000
+        # ST1003: naming conventions. Names follow the show and the C++
+        # reference.
+        - -ST1003
+
+  exclusions:
+    rules:
+      # Benchmarks and scale tests ignore returns and allocate in loops; that
+      # is what they measure.
+      - path: (bench|scale|storm)_test\.go
+        linters: [errcheck, prealloc]
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  enable:
+    - gofmt

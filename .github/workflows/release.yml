@@ -1,0 +1,54 @@
+name: release
+
+# A pushed tag like v3.1.0 builds every binary, signs a build-provenance
+# attestation for each one, and publishes them as that tag's release.
+#
+# The agent plugins pin these binaries by hash (scripts/pin-plugin.sh), which
+# checks each attestation: a binary is pinned only if this workflow, in this
+# repository, built it from that tag.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # create the release
+      id-token: write # a Sigstore certificate for this workflow's identity
+      attestations: write # store the attestations on GitHub
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+
+      # The throughput test needs a faster machine than a shared runner.
+      - name: test
+        run: go test ./... -count=1 -skip '^TestAFloorOfHundredsKeepsUp$'
+
+      # The same script and flags as a maintainer's own build of the tag, so
+      # pin-plugin.sh can compare the two.
+      - name: build
+        run: SKIP_TESTS=1 VERSION="$GITHUB_REF_NAME" ./scripts/build.sh
+
+      # GitHub stores attestations only for public repositories on this plan,
+      # so a private copy publishes its release unattested. The plugins pin
+      # only releases attested here, in the public repository.
+      - name: attest
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: dist/checksums.sha256sum
+
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/lumon_* dist/checksums.sha256sum \
+            --verify-tag --title "$GITHUB_REF_NAME" --generate-notes

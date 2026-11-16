@@ -1,0 +1,151 @@
+{
+  "description": "Records whether Claude is working (and on what), waiting for approval or done, and, only when a delay is enabled, opens Lumon beside a long-running session: in a pane beside the chat where Claude Code has one, else a pane of herdr or tmux or a terminal window.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" start",
+            "async": true,
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" prompt",
+            "async": true,
+            "timeout": 700
+          }
+        ]
+      }
+    ],
+    "UserPromptExpansion": [
+      {
+        "matcher": "^lumon:play$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" open",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "^lumon:watch$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" watch",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "^lumon:screensaver$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" screensaver",
+            "timeout": 60
+          }
+        ]
+      },
+      {
+        "matcher": "^lumon:off$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" off",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "^lumon:snooze$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" snooze",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "^lumon:on$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" on",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" tool",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" waiting",
+            "async": true,
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" idle",
+            "async": true,
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" stop",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/bin/lumon-hook\" end",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "modules": [
+    "./pane.tsx"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "private": true,
+  "type": "module",
+  "name": "lumon-plugin-tests",
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.5.2",
+    "@earendil-works/pi-tui": "1.5.2",
+    "@opencode-ai/plugin": "1.19.5",
+    "@opencode/plugin": "2.2.6",
+    "@opentui/core": "0.8.1",
+    "@opentui/solid": "0.8.1",
+    "@types/node": "26.6.6",
+    "solid-js": "1.9.17",
+    "typescript": "5.9.2"
+  },
+  "scripts": {
+    "check:plugins": "tsc -p plugins.tsconfig.json",
+    "test:plugins": "./scripts/test-inline.sh"
+  }
+}

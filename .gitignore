@@ -1,0 +1,16 @@
+# The lumon binary, built at the root or inside cmd/lumon.
+/lumon
+/cmd/lumon/lumon
+
+*.test
+*.prof
+.DS_Store
+
+/dist/
+/prof/
+
+# Plugin development dependencies.
+node_modules/
+
+# Written by Claude Code when the plugin is loaded with --plugin-dir.
+/plugins/claude-code/tsconfig.json

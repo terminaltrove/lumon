@@ -1,0 +1,221 @@
+#!/bin/sh
+# Runs Lumon for a coding agent's plugin: its handler for one agent event, or,
+# for Claude Code's pane module, the game itself (event pane).
+#
+# The plugin's root is the directory above this file, which holds version and
+# checksums.sha256sum. Its data directory is CLAUDE_PLUGIN_DATA (Claude Code),
+# LUMON_PLUGIN_DATA (Pi and OpenCode), else
+# ~/.local/share/lumon/plugin for agents that name none. Every agent's status
+# goes to one directory, LUMON_STATUS_DIR or ~/.local/state/lumon/agents, so
+# one game shows them all.
+#
+# The binary is fetched from the release pinned in ../version, over HTTPS
+# only, and its SHA-256 is checked against ../checksums.sha256sum before every
+# run. A file that does not match is deleted and never run; no other lumon on
+# PATH is ever used. LUMON_BIN names a local build to run instead, for trying
+# the plugins before a release; it is the player's own and is not checked.
+#
+# The off, on and snooze events are the switch that stops the game following
+# the agent, for every agent at once; LUMON_AGENTS=off does the same for one
+# shell. Asking for the game still opens it.
+#
+# It must never get in the agent's way, so every failure prints one line to
+# stderr and exits 0. (Exit code 2 from a UserPromptSubmit hook would block the
+# player's prompt.) It prints nothing on stdout.
+
+set -u
+umask 077
+
+fail() {
+	echo "lumon plugin: $*" >&2
+	exit 0
+}
+
+event=${1:-}
+case $event in
+start | prompt | waiting | stop | idle | end | open | watch | screensaver | window | pane | tool | off | on | snooze) ;;
+*) fail "unknown event '$event'" ;;
+esac
+
+# The agent waits on its tool hook before every tool call, so the tool event
+# hands itself to the background, with the hook's input, and returns at once.
+# The input goes through fd 3: dash gives a background job /dev/null for
+# stdin, even with 0<&0.
+if [ "$event" = tool ] && [ -z "${LUMON_DETACHED:-}" ]; then
+	exec 3<&0
+	LUMON_DETACHED=1 sh "$0" tool <&3 3<&- >/dev/null 2>&1 &
+	exit 0
+fi
+
+root=$(cd "$(dirname "$0")/.." 2>/dev/null && pwd -P) || fail "cannot find the plugin's directory"
+data=${CLAUDE_PLUGIN_DATA:-${LUMON_PLUGIN_DATA:-}}
+if [ -z "$data" ]; then
+	[ -n "${HOME:-}" ] || fail "no data directory: HOME is not set"
+	data=${XDG_DATA_HOME:-$HOME/.local/share}/lumon/plugin
+fi
+
+[ -n "${HOME:-}" ] || [ -n "${LUMON_STATUS_DIR:-}" ] || fail "no status directory: HOME is not set"
+status=${LUMON_STATUS_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/lumon/agents}
+
+# The switch is a file in the status directory, read here before anything is
+# fetched and again by the game (internal/agent/off.go). Empty, it is off until
+# turned on; holding a Unix time, off until then. Anything else is off.
+off=$status/off
+case $event in
+off | snooze)
+	mkdir -p "$status" || fail "cannot make $status"
+	if [ "$event" = off ]; then
+		: >"$off" || fail "cannot write $off"
+	else
+		# The next local midnight. The fields lose their leading zeros so the
+		# shell does not read 08 as octal.
+		now=$(date +%s) h=$(date +%H) m=$(date +%M) s=$(date +%S)
+		h=${h#0} m=${m#0} s=${s#0}
+		echo $((now + 86400 - h * 3600 - m * 60 - s)) >"$off" || fail "cannot write $off"
+	fi
+	exit 0
+	;;
+on)
+	rm -f "$off"
+	exit 0
+	;;
+open | watch | screensaver | window | pane) ;;
+*)
+	[ "${LUMON_AGENTS:-}" = off ] && exit 0
+	if [ -e "$off" ]; then
+		until=$(cat "$off" 2>/dev/null)
+		case $until in
+		'' | *[!0-9]*) exit 0 ;;
+		esac
+		[ "$(date +%s)" -lt "$until" ] && exit 0
+		rm -f "$off"
+	fi
+	;;
+esac
+
+if [ -n "${LUMON_BIN:-}" ]; then
+	if [ ! -f "$LUMON_BIN" ] || [ ! -x "$LUMON_BIN" ]; then
+		fail "LUMON_BIN is not a program: $LUMON_BIN"
+	fi
+	bin=$LUMON_BIN
+else
+	# The public releases. LUMON_RELEASES is for testing a mirror; the hash check
+	# applies whatever it is, and curl follows redirects over HTTPS only.
+	releases=${LUMON_RELEASES:-https://github.com/terminaltrove/lumon/releases/download}
+
+	version=$(cat "$root/version" 2>/dev/null) || fail "no version file"
+	case $version in
+	unreleased) fail "no release is pinned yet" ;;
+	*[!A-Za-z0-9._-]* | '') fail "bad pinned version" ;;
+	esac
+
+	machine=$(uname -m)
+	case $(uname -s) in
+	Darwin) os=darwin ;;
+	Linux) os=linux ;;
+	FreeBSD) os=freebsd ;;
+	OpenBSD) os=openbsd ;;
+	# NetBSD's arm64 port reports evbarm as its machine; the processor says aarch64.
+	NetBSD) os=netbsd machine=$(uname -p) ;;
+	*) fail "no build for $(uname -s)" ;;
+	esac
+	case $machine in
+	x86_64 | amd64) arch=amd64 ;;
+	arm64 | aarch64) arch=arm64 ;;
+	armv6l | armv7l) arch=arm ;;
+	i386 | i686) arch=386 ;;
+	*) fail "no build for $machine" ;;
+	esac
+	name=lumon_${os}_${arch}
+
+	want=$(awk -v n="$name" '$2 == n || $2 == "*" n { print $1; exit }' "$root/checksums.sha256sum" 2>/dev/null)
+	case $want in
+	*[!0-9a-f]* | '') fail "no pinned hash for $name" ;;
+	esac
+	[ ${#want} -eq 64 ] || fail "bad pinned hash for $name"
+
+	# openssl first: the Stop hook holds the agent while this runs, and shasum is a
+	# Perl script about three times slower. Any answer that is not a hash falls
+	# through to the next tool.
+	sha256() {
+		if command -v openssl >/dev/null 2>&1; then
+			sum=$(openssl dgst -sha256 -r "$1" 2>/dev/null | awk '{ print $1 }')
+			case $sum in
+			*[!0-9a-f]* | '') ;;
+			*) [ ${#sum} -eq 64 ] && echo "$sum" && return ;;
+			esac
+		fi
+		if command -v sha256sum >/dev/null 2>&1; then
+			sha256sum "$1" | awk '{ print $1 }'
+		elif command -v shasum >/dev/null 2>&1; then
+			shasum -a 256 "$1" | awk '{ print $1 }'
+		else
+			echo none
+		fi
+	}
+
+	dir=$data/bin/$version
+	bin=$dir/$name
+
+	if [ ! -f "$bin" ]; then
+		command -v curl >/dev/null 2>&1 || fail "curl is needed to fetch the game"
+		mkdir -p "$dir" || fail "cannot make $dir"
+		tmp=$(mktemp "$dir/.fetch.XXXXXX") || fail "cannot write to $dir"
+		# The agent stops a hook that runs past its session; take the part-fetched
+		# file with it.
+		trap 'rm -f "$tmp"' EXIT
+		trap 'rm -f "$tmp"; exit 0' HUP INT TERM
+		if ! curl --proto '=https' --tlsv1.2 -fsSL --max-time 120 -o "$tmp" "$releases/$version/$name"; then
+			rm -f "$tmp"
+			fail "could not fetch $name $version"
+		fi
+		if [ "$(sha256 "$tmp")" != "$want" ]; then
+			rm -f "$tmp"
+			fail "refused $name: its hash is not the pinned one"
+		fi
+		if ! chmod 700 "$tmp" || ! mv -f "$tmp" "$bin"; then
+			rm -f "$tmp"
+			fail "cannot install $bin"
+		fi
+		trap - EXIT HUP INT TERM
+	fi
+
+	# Checked on every run, so a binary changed after it was fetched never runs.
+	if [ "$(sha256 "$bin")" != "$want" ]; then
+		rm -f "$bin"
+		fail "refused $bin: its hash is not the pinned one, so it was deleted"
+	fi
+fi
+
+# Settings: Claude Code's plugin options, else LUMON_DELAY, LUMON_COMPANY and
+# LUMON_MODE from the environment.
+delay=${CLAUDE_PLUGIN_OPTION_DELAY:-${LUMON_DELAY:-off}}
+case $delay in
+off) delay=0 ;;
+*[!0-9]* | '') delay=0 ;;
+esac
+# hooks.json gives the prompt hook 700 seconds in all.
+[ "$delay" -le 600 ] || delay=600
+
+company=${CLAUDE_PLUGIN_OPTION_COMPANY:-${LUMON_COMPANY:-0}}
+case $company in
+0 | 1 | 2 | 3) ;;
+*) company=0 ;;
+esac
+set -- --bots "$company"
+case ${CLAUDE_PLUGIN_OPTION_MODE:-${LUMON_MODE:-play}} in
+watch) set -- "$@" --watch ;;
+screensaver) set -- "$@" --screensaver ;;
+esac
+
+# pane is the game itself, for the pane module beside the chat: frames out on
+# stdout, the pane's size and keys in through a file the module writes.
+if [ "$event" = pane ]; then
+	"$bin" --pane "${LUMON_PANE_INPUT:-$data/pane-input}" --agent-status "$status" "$@"
+	exit 0
+fi
+
+# Not exec: whatever the binary exits with (the flag package exits 2 on a flag
+# it does not know), this exits 0.
+"$bin" --agent-hook "$event" --agent-status "$status" --agent-delay "$delay" "$@"
+exit 0

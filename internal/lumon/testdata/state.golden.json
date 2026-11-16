@@ -1,0 +1,219 @@
+{
+  "version": 2,
+  "saved": "2027-01-02T00:00:00Z",
+  "rooms": [
+    {
+      "file": "Narva",
+      "seed": 8475284246537043955,
+      "gridSeed": 8475284246537043955,
+      "epoch": 0,
+      "history": [
+        "DRANESVILLE"
+      ],
+      "refined": null,
+      "bins": [
+        0,
+        0,
+        5,
+        0,
+        0
+      ],
+      "tempers": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "tally": {}
+    },
+    {
+      "file": "Penzias",
+      "seed": 2135276795452531224,
+      "gridSeed": 2135276795452531224,
+      "epoch": 0,
+      "history": null,
+      "refined": null,
+      "bins": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "tempers": [
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "tally": {}
+    }
+  ],
+  "ledger": [
+    {
+      "name": "MARK S.",
+      "refined": 9,
+      "files": 1,
+      "topped": 1,
+      "seen": "2026-11-01T09:00:00Z",
+      "quarter": {
+        "of": "2026-Q4",
+        "refined": 9,
+        "files": 1,
+        "topped": 1
+      },
+      "tempers": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "HELLY R.",
+      "refined": 3,
+      "files": 0,
+      "topped": 0,
+      "seen": "2026-11-01T09:00:00Z",
+      "quarter": {
+        "of": "2026-Q4",
+        "refined": 3,
+        "files": 0,
+        "topped": 0
+      },
+      "tempers": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "IRVING B.",
+      "refined": 2,
+      "files": 0,
+      "topped": 0,
+      "seen": "2027-01-02T00:00:00Z",
+      "quarter": {
+        "of": "2027-Q1",
+        "refined": 2,
+        "files": 0,
+        "topped": 0
+      },
+      "tempers": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "quarter": "2027-Q1",
+  "pastQuarters": [
+    {
+      "quarter": "2026-Q4",
+      "top": [
+        {
+          "name": "MARK S.",
+          "refined": 9,
+          "files": 1,
+          "topped": 1,
+          "seen": "2026-11-01T09:00:00Z",
+          "quarter": {
+            "of": "2026-Q4",
+            "refined": 9,
+            "files": 1,
+            "topped": 1
+          },
+          "tempers": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "HELLY R.",
+          "refined": 3,
+          "files": 0,
+          "topped": 0,
+          "seen": "2026-11-01T09:00:00Z",
+          "quarter": {
+            "of": "2026-Q4",
+            "refined": 3,
+            "files": 0,
+            "topped": 0
+          },
+          "tempers": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "recent": [
+    {
+      "file": "COLD HARBOR",
+      "finished": "2026-11-01T09:00:00Z",
+      "top": "MARK S.",
+      "counts": {
+        "MARK S.": 4
+      }
+    }
+  ]
+}

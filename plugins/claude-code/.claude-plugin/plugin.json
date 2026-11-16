@@ -1,0 +1,35 @@
+{
+  "name": "lumon",
+  "version": "1.5.1",
+  "description": "Refine macrodata while Claude works. Open Lumon when you want to play and see when Claude is done or needs you. Automatic opening is opt-in.",
+  "author": {
+    "name": "Terminal Trove",
+    "url": "https://terminaltrove.com/"
+  },
+  "homepage": "https://lumon.terminaltrove.com/",
+  "repository": "https://github.com/terminaltrove/lumon",
+  "license": "MIT",
+  "userConfig": {
+    "delay": {
+      "type": "string",
+      "title": "Open Lumon after",
+      "description": "Seconds Claude must keep working on a prompt before Lumon opens on its own. off opens it only with /lumon:play.",
+      "default": "off",
+      "options": ["off", "10", "20", "30", "60", "120"]
+    },
+    "company": {
+      "type": "string",
+      "title": "Computer refiners",
+      "description": "How many computer refiners sit at the board with you. c in the game adds or sends them home.",
+      "default": "0",
+      "options": ["0", "1", "2", "3"]
+    },
+    "mode": {
+      "type": "string",
+      "title": "When Lumon opens",
+      "description": "play takes a desk; watch gets up and watches computer refiners work the file; screensaver shows the bouncing mark, and any key starts a game. w in the game switches between playing and watching.",
+      "default": "play",
+      "options": ["play", "watch", "screensaver"]
+    }
+  }
+}

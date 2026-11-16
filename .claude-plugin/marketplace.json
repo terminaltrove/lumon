@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "terminaltrove",
+  "description": "Terminal Trove's plugins for Claude Code.",
+  "owner": {
+    "name": "Terminal Trove",
+    "url": "https://terminaltrove.com/"
+  },
+  "plugins": [
+    {
+      "name": "lumon",
+      "description": "Refine macrodata while Claude works. Open Lumon when you want to play and see when Claude is done or needs you. Automatic opening is opt-in.",
+      "source": "./plugins/claude-code",
+      "category": "productivity",
+      "homepage": "https://lumon.terminaltrove.com/"
+    }
+  ]
+}

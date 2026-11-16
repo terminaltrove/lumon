@@ -1,0 +1,33 @@
+{
+  "name": "@terminaltrove/lumon-opencode",
+  "version": "1.1.0",
+  "description": "Refine macrodata while OpenCode works. Open Lumon when you want to play and see when OpenCode is done or needs you. Automatic opening is opt-in.",
+  "keywords": [
+    "opencode-plugin",
+    "lumon",
+    "game"
+  ],
+  "homepage": "https://lumon.terminaltrove.com/",
+  "repository": "https://github.com/terminaltrove/lumon",
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./server": "./index.ts",
+    "./tui": "./tui.ts"
+  },
+  "files": [
+    "index.ts",
+    "bin/lumon-hook",
+    "version",
+    "checksums.sha256sum",
+    "README.md",
+    "inline.ts",
+    "tui.ts"
+  ],
+  "peerDependencies": {
+    "@opentui/core": ">=0.4.5",
+    "solid-js": ">=1.9.0"
+  }
+}
